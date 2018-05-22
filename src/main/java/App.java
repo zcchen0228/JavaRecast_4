@@ -90,7 +90,7 @@ public class App extends CrowdSimApp{
                     float[] trashCan = new float[]{4,0.31f,-6}; // where the trash can is
 
                     /**
-                     * agent 0 go to throw the gate
+                     * agent 1 go to throw the gate
                      */
                     if (currentMillisecond > 0 && currentMillisecond < 3000) {
                         FindNearestPolyResult nearestTemp = query.findNearestPoly(trashCan, ext, filter);
@@ -103,7 +103,7 @@ public class App extends CrowdSimApp{
                     }
 
                     /**
-                     * agent 1 go to throw the trash
+                     * agent 0 go to throw the trash
                      */
                     if (currentMillisecond > 3000 && currentMillisecond < 6000) {
                         FindNearestPolyResult nearestTemp = query.findNearestPoly(gate0, ext, filter);
@@ -111,41 +111,13 @@ public class App extends CrowdSimApp{
                     }
 
                     /**
-                     * agent 0 go to throw the gate
+                     * agent 1 go to throw the gate
                      */
                     if (currentMillisecond > 2000 && currentMillisecond < 6000) {
                         FindNearestPolyResult nearestTemp = query.findNearestPoly(gate1, ext, filter);
                         crowd.requestMoveTarget(1, nearestTemp.getNearestRef(), nearestTemp.getNearestPos());
                     }
 
-
-
-
-                    /**
-                     * agent 1 go to throw the gate
-                     */
-//                    if (currentMillisecond > 2000 && currentMillisecond < 5500) {
-//                        FindNearestPolyResult nearestTemp = query.findNearestPoly(gate, ext, filter);
-//                        crowd.requestMoveTarget(1, nearestTemp.getNearestRef(), nearestTemp.getNearestPos());
-//                    }
-
-
-
-//                    // agent 0 takes 3500 millisecond to walk through the gate
-//                    if (currentMillisecond >= 2000 && currentMillisecond < 5500) {
-//                        float[] goTo = new float[]{0,0.31f,0};
-//                        FindNearestPolyResult nearestTemp = query.findNearestPoly(goTo, ext, filter);
-//                        crowd.requestMoveTarget(j, nearestTemp.getNearestRef(), nearestTemp.getNearestPos());
-//                    }
-
-//
-
-                    // set Agent 1 to different destination after the security check
-//                    if (currentMillisecond > 7000) {
-//                        float[] endOne = new float[]{0,0.31f,8};
-//                        FindNearestPolyResult nearestTemp = query.findNearestPoly(endOne, ext, filter);
-//                        crowd.requestMoveTarget(1, nearestTemp.getNearestRef(), nearestTemp.getNearestPos());
-//                    }
                 }
 
             //Now we actually run the simulation
@@ -179,9 +151,6 @@ public class App extends CrowdSimApp{
                  * 4. when agent arrives.(two condition)
                  *      1. no agent, go to gate directly
                  *      2. agents line up already, go to rear of the queue
-                 *
-                 *
-                 *
                  */
                 // line up
 
