@@ -75,16 +75,6 @@ public class App extends CrowdSimApp{
                      *
                      */
 
-                    /**
-                     * stay in first 1500 millisec
-                     * */
-//                    Agent tempAgent = agents.get(0);
-//                    if (currentMillisecond >= 0 && currentMillisecond < 1500) {
-//                        float[] stay = new float[]{-8,0.31f,-8}; // where the trash can is
-//                        FindNearestPolyResult nearestTemp = query.findNearestPoly(stay, ext, filter);
-//                        crowd.requestMoveTarget(0, nearestTemp.getNearestRef(), nearestTemp.getNearestPos());
-//                    }
-
                     float[] gate1 = new float[]{0,0.31f,-1};
                     float[] gate0 = new float[]{0,0.31f,0};
                     float[] trashCan = new float[]{4,0.31f,-6}; // where the trash can is
