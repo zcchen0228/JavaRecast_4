@@ -7,6 +7,8 @@ public class Agent{
     public float destZ;
     public int startMSec;
 
+    public boolean check = false;
+
     public Agent(String l) {
         String[] splits = l.split(",");
 
@@ -20,13 +22,16 @@ public class Agent{
 
         startMSec = (int)Float.parseFloat(splits[1]);
 
+        check = false;
     }
 
     public float[] getStart() {
         return new float[]{startX, startY, startZ};
     }
 
-    public float[] getEnd() {
-        return new float[]{destX, destY, destZ};
-    }
+    public float[] getEnd() { return new float[]{destX, destY, destZ}; }
+
+    public void setCheck() { check = true; }
+
+    public boolean getCheck() { return check; }
 }

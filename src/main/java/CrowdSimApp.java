@@ -98,8 +98,18 @@ public class CrowdSimApp {
             float x = crowd.getAgent(j).npos[0];
             float y = crowd.getAgent(j).npos[2];
 
-            writer.write("" + j +"," + currentMillisecond + "," + x + "," + y + "\n");
+         writer.write("" + j +"," + currentMillisecond + "," + x + "," + y + "\n");
         }
+    }
+
+    protected float[] getAgentCurrntPosition(int agentNum) {
+        float[] res = {0,0,0};
+
+        res[0] = crowd.getAgent(agentNum).npos[0];
+        res[1] = crowd.getAgent(agentNum).npos[1];
+        res[2] = crowd.getAgent(agentNum).npos[2] - 1;
+
+        return res;
     }
 
     protected Path bootFiles() {

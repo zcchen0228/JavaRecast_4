@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
+import java.util.Random;
 
 /**
  * Our crowd simulation class that extends CrowdSimApp.
@@ -17,6 +18,10 @@ public class App extends CrowdSimApp{
 
     App() {
 
+
+        Random rand = new Random();
+        int ranNum = rand.nextInt(4);
+
         //Path is the path to the file where we will store our results
         //Currently, this is out.csv.
         Path path = bootFiles();
@@ -26,6 +31,8 @@ public class App extends CrowdSimApp{
 
             //Boot simulation tells Recast to load the scene
             bootMesh();
+
+            boolean check = false;
 
             int currentMillisecond = 0; //The current time
             int millisecondsBetweenFrames = 40; //40ms between frames, or 25fps
@@ -41,21 +48,38 @@ public class App extends CrowdSimApp{
                 currentMillisecond+=millisecondsBetweenFrames;
 
 
+                Agent agent0 = agents.get(0);
+//                Agent agent1 = agents.get(1);
+                Agent agent4 = agents.get(4);
+
+                // format float[] {x, y, z};
+                float[] gate = new float[]{8,0.31802097f,0};
+                float[] trashCan = new float[]{0,0.31f,4}; // where the trash can is
+
+
+
                 //At this point, we've loaded in.csv and store the starting positions/destinations
                 //of each agent in a list called agents.
                 //We'll loop over the agents and tell the crowd simulator
                 //where each agent is and where each agent wants to go
                 for(int j = 0; j < agents.size(); j++)
                 {
+                    float[] agentCur = getAgentCurrntPosition(j);
+
                     Agent agent = agents.get(j); //Grab each agent in the list
                     float[] start = agent.getStart();//Get the agent's starting point as a float array
                     crowd.addAgent(start, ap); //Assign that point to the agent
 
                     //Now find the nearest valid location to the agent's desired destination
                     //and assign that nearest point.
-                    FindNearestPolyResult nearest = query.findNearestPoly(agent.getEnd(), ext, filter);
-                    crowd.requestMoveTarget(j, nearest.getNearestRef(), nearest.getNearestPos());
-
+//                    if(check == false) {
+                    if(!agents.get(j).getCheck()) {
+                        FindNearestPolyResult nearest = query.findNearestPoly(gate, ext, filter);
+                        crowd.requestMoveTarget(j, nearest.getNearestRef(), nearest.getNearestPos());
+                    } else {
+                        FindNearestPolyResult nearestTemp = query.findNearestPoly(agent.getEnd(), ext, filter);
+                        crowd.requestMoveTarget(j, nearestTemp.getNearestRef(), nearestTemp.getNearestPos());
+                    }
 
                     /**
                      * 1. set final destination
@@ -75,38 +99,15 @@ public class App extends CrowdSimApp{
                      *
                      */
 
-                    float[] gate1 = new float[]{0,0.31f,-1};
-                    float[] gate0 = new float[]{0,0.31f,0};
-                    float[] trashCan = new float[]{4,0.31f,-6}; // where the trash can is
-
                     /**
-                     * agent 1 go to throw the gate
-                     */
-                    if (currentMillisecond > 0 && currentMillisecond < 3000) {
-                        FindNearestPolyResult nearestTemp = query.findNearestPoly(trashCan, ext, filter);
-                        crowd.requestMoveTarget(1, nearestTemp.getNearestRef(), nearestTemp.getNearestPos());
+                     * stay in first 1500 millisec
+                     * */
+
+                    if(agentCur[0] > 6 && agentCur[2] > -0.1) {
+                        agents.get(j).setCheck();
                     }
 
-                    if (currentMillisecond > 6000 && currentMillisecond < 8500) {
-                        FindNearestPolyResult nearestTemp = query.findNearestPoly(gate0, ext, filter);
-                        crowd.requestMoveTarget(1, nearestTemp.getNearestRef(), nearestTemp.getNearestPos());
-                    }
 
-                    /**
-                     * agent 0 go to throw the trash
-                     */
-                    if (currentMillisecond > 3000 && currentMillisecond < 6000) {
-                        FindNearestPolyResult nearestTemp = query.findNearestPoly(gate0, ext, filter);
-                        crowd.requestMoveTarget(0, nearestTemp.getNearestRef(), nearestTemp.getNearestPos());
-                    }
-
-                    /**
-                     * agent 1 go to throw the gate
-                     */
-                    if (currentMillisecond > 2000 && currentMillisecond < 6000) {
-                        FindNearestPolyResult nearestTemp = query.findNearestPoly(gate1, ext, filter);
-                        crowd.requestMoveTarget(1, nearestTemp.getNearestRef(), nearestTemp.getNearestPos());
-                    }
 
                 }
 
@@ -132,26 +133,14 @@ public class App extends CrowdSimApp{
                  * Loop over the agents and, well, do whatever you want.
                  * Mainly you'll want to change agents' destinations as needed.
                  */
-
-
-                /**
-                 * 1. set final destination
-                 * 2. agents have to walk through a "gate" which takes 3 to 5 secs per agent
-                 * 3. thus set short-term destination to the gate
-                 * 4. when agent arrives.(two condition)
-                 *      1. no agent, go to gate directly
-                 *      2. agents line up already, go to rear of the queue
-                 */
-                // line up
-
-//                if (currentMillisecond >= 3000 && currentMillisecond < 5500) {
-//                    float[] goTo = new float[]{0,0.31f,0};
-//                    FindNearestPolyResult nearest = query.findNearestPoly(goTo, ext, filter);
-//                    crowd.requestMoveTarget(2, nearest.getNearestRef(), nearest.getNearestPos());
-//                }
             }
         } catch (IOException ignored) {
 
         }
+    }
+
+    private void holdAgent(Agent agent, int agentNum) {
+        FindNearestPolyResult nearest = query.findNearestPoly(agent.getStart(), ext, filter);
+        crowd.requestMoveTarget(agentNum, nearest.getNearestRef(), nearest.getNearestPos());
     }
 }
