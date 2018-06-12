@@ -107,7 +107,17 @@ public class CrowdSimApp {
 
         res[0] = crowd.getAgent(agentNum).npos[0];
         res[1] = crowd.getAgent(agentNum).npos[1];
-        res[2] = crowd.getAgent(agentNum).npos[2] - 1;
+        res[2] = crowd.getAgent(agentNum).npos[2];
+
+        return res;
+    }
+
+    protected float[] getAgentBackPosition(int agentNum) {
+        float[] res = {0,0,0};
+
+        res[0] = crowd.getAgent(agentNum).npos[0] - 1;
+        res[1] = crowd.getAgent(agentNum).npos[1];
+        res[2] = crowd.getAgent(agentNum).npos[2] - 1.3f;
 
         return res;
     }
