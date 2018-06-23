@@ -1,0 +1,127 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>See the crowds</title>
+    <style>
+    </style>
+</head>
+
+<body>
+
+<output id="list"></output>
+
+<div id='app'>
+    <canvas style="width:640px;height:640px;margin-left:auto;margin-right:auto" id="canv" onmousedown="mouseDown(event)"></canvas>
+    <div>
+        <button @click="restart()" v-if="frame>0">Restart</button>
+    </div>
+    <div>
+        <button @click="pause()" v-if="frame>0">Pause</button>
+    </div>
+</div>
+
+<script src='./data.js'></script>
+
+
+
+<script src='https://code.jquery.com/jquery-3.2.1.min.js'></script>
+<script src='https://unpkg.com/vue'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js'></script>
+
+<script>
+
+    var app = new Vue({
+      el: '#app',
+      data: {
+        lines: [],
+        values: [],
+        frame: 0,
+        minX: 0,
+        minY: 0,
+        maxX: 0,
+        maxY: 0,
+        maxFrame: 1000000,
+        paused: false,
+      },
+      methods: {
+        render() {
+          canvas = document.getElementById("canv");   ///Get the canvas object
+          canvas.width = 640;
+          canvas.height = 640;
+          var ctx = canvas.getContext("2d");      ///Get the canvas context
+          ///Clear the rectangles
+          ctx.resetTransform();
+          ctx.fillStyle = "yellow";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          ctx.strokeStyle = "black";
+          ctx.strokeText(this.frame + "/" + this.maxFrame, 10, 10);
+
+          let scale = Math.max(app.maxX - app.minX, app.maxY - app.minY);
+
+          ctx.scale(640 / (scale), 640 / (scale));
+          ctx.translate(-app.minX, -app.minY);
+
+
+          for (let i = 0; i <= app.values.map(v => v[0]).reduce((a, b) => Math.max(a, b), 0); i++) {
+
+            let frame = app.frame;
+            let msec = frame * 40;
+            let val = app.values.filter(v => {
+              return v[0] == i && v[1] == msec
+            })[0];
+
+            if (val) {
+              ctx.beginPath();
+              ctx.fillStyle = "black";
+              ctx.arc(val[2], val[3], .5, 0, Math.PI * 2, false);
+              ctx.fill();
+            }
+          }
+        },
+        update() {
+          this.render();
+          if (!this.paused) {
+            this.frame++;
+            this.frame %= this.maxFrame;
+          }
+        },
+        restart() {
+          this.frame = 0;
+          this.paused = false;
+        },
+        pause() {
+          this.paused = !this.paused;
+        }
+      }
+    });
+
+    app.lines = [];
+          app.values = [];
+          app.frame = 0;
+          app.lines = data.split("\n");
+
+          for (let i = 0; i < app.lines.length; i++) {
+            if (app.lines[i].trim())
+              app.values.push(app.lines[i].split(",").map(Number));
+          }
+
+
+          app.minX = app.values.map(l => l[2]).reduce((a, b) => Math.min(a, b), 10000000);
+          app.minY = app.values.map(l => l[3]).reduce((a, b) => Math.min(a, b), 10000000);
+          app.maxX = app.values.map(l => l[2]).reduce((a, b) => Math.max(a, b), -10000000);
+          app.maxY = app.values.map(l => l[3]).reduce((a, b) => Math.max(a, b), -10000000);
+
+          app.maxFrame = app.values.map(l => l[1]).reduce((a, b) => Math.max(a, b), 0) / 40;
+
+
+
+
+          setInterval(app.update, 40);
+
+  </script>
+
+</body>
+
+</html>

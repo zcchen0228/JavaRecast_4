@@ -38,3 +38,20 @@ repositories {
     mavenCentral()
     jcenter()
 }
+
+
+    task cleanTests(type: GradleBuild) {
+        tasks = ["clean", "test"]
+        doLast {
+            println "Hi There"
+
+        }
+    }
+
+    task viewResults(type: Exec) {
+
+        workingDir '.'
+
+        //on windows:
+        commandLine 'cmd', '/c', 'start index.html'
+    }

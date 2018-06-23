@@ -4,13 +4,10 @@
 import org.junit.Test;
 
 public class AppTest {
-    @Test
-    public void testAppHasAGreeting() {
+    @Test public void testAppHasAGreeting() {
         System.out.println("Working Directory = " +
                 System.getProperty("user.dir"));
         new App();
         //assertNotNull("app should have a greeting", classUnderTest.getGreeting());
     }
 }
-
-

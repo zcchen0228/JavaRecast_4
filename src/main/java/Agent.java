@@ -7,14 +7,18 @@ public class Agent{
     public float destZ;
     public int startMSec;
 
-    public boolean check;
+    public int id;
+    public boolean queueExist;
+    public boolean checked;
     public boolean checking;
     public boolean rear;
     public boolean waiting;
     public Agent agentInFront;
 
+
+    public float dis;
+
     public Agent(String l) {
-        agentInFront = null;
         String[] splits = l.split(",");
 
         startX = Float.parseFloat(splits[1]);
@@ -27,32 +31,39 @@ public class Agent{
 
         startMSec = (int)Float.parseFloat(splits[1]);
 
-        check = false;
+        rear = false;
+        queueExist = false;
+        checked = false;
         checking = false;
         rear = false;
         waiting = false;
-
+        dis = 0;
     }
+
+    public float[] getStart() {return new float[]{startX, startY, startZ};}
+    public float[] getEnd() {return new float[]{destX, destY, destZ};}
 
     public void setAgentInFront (Agent a) { agentInFront = a; }
     public Agent getAgentInFront (Agent a) { return agentInFront; }
 
-    public float[] getStart() {
-        return new float[]{startX, startY, startZ};
-    }
-    public float[] getEnd() { return new float[]{destX, destY, destZ}; }
+    public void setChecked() { checked = true; }
+    public boolean getChecked() { return checked; }
 
-    public void setCheck() { check = true; }
-    public boolean getCheck() { return check; }
+    public void setChecking() { checked = true; }
+    public boolean getChecking() { return checked; }
 
-    public void setRear() { rear = true; }
-    public void setNotRear() { rear = false; }
-    public boolean getRear() { return rear; }
+    public float getDistance() { return dis; }
+    public void setDis(float dis) { this.dis = dis; }
 
+//    public boolean getQueueExist() {
+//
+//        return this.queueExist;
+//    }
 
-    public void setChecking() { checking = true; }
-    public boolean getChecking() { return checking; }
+    public void setId(int i) { id = i; }
+    public int getId() { return id; }
 
-    public void setWaiting() { check = true; }
-    public boolean getWainting() { return check; }
+    public void setWaiting() { waiting = true; }
+    public boolean isWaiting() { return waiting; }
+
 }
