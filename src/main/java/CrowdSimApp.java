@@ -150,9 +150,13 @@ public class CrowdSimApp {
     // a method to get the current behind position of certain agetn
     protected float[] getAgentBackPosition(int agentNum) {
         Random ran = new Random();
+        float leftLimit = - 0.5f;
+        float rightLimit = 0.5f;
+        float generatedFloat = leftLimit + ran.nextFloat() * (rightLimit - leftLimit);
+
         float[] res = {0,0,0};
 
-        res[0] = crowd.getAgent(agentNum).npos[0];
+        res[0] = crowd.getAgent(agentNum).npos[0] + generatedFloat;
         res[1] = crowd.getAgent(agentNum).npos[1];
         res[2] = crowd.getAgent(agentNum).npos[2] - 1.5f;
 

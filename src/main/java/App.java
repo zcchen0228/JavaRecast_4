@@ -20,9 +20,9 @@ public class App extends CrowdSimApp{
     ArrayList<Float> agentPos = new ArrayList<>();
     ArrayList<Float> agentDis = new ArrayList<>();
 
-
     LinkedList<Agent> queue = new LinkedList<>();
     LinkedList<Integer> queueId = new LinkedList<>();
+    LinkedList<Integer> queueId2 = new LinkedList<>();
 
     App() {
 
@@ -36,6 +36,8 @@ public class App extends CrowdSimApp{
             //Boot simulation tells Recast to load the scene
             bootMesh();
 
+            // store gate coordinate in array
+//            for ()
 
             //Now we actually run the simulation
 
@@ -63,44 +65,28 @@ public class App extends CrowdSimApp{
                     float[] start = agent.getStart();//Get the agent's starting point as a float array
                     crowd.addAgent(start, ap); //Assign that point to the agent
 
-                    //////////////////////////////////////////////////////////
                     agent.setId(j);
 
-                    float dis, newDis;
+                    float[] gate = new float[]{-3, 0.31802097f, 8};
+                    float[] gate2 = new float[]{2, 0.31802097f, 8};
+
+//                    float[] gate = pickGate(j);
 
                     float[] agentCur = getAgentCurrntPosition(j);
-                    if (queueId.size() == 0) {
-                        float[] gate = new float[]{0, 0.31802097f, 8};
-                        // no agent is checking, no queue
-                        agentGoToGate(j, gate);
-                        dis = getDis(agentCur, gate);
-                        if (dis < 0.5f) {
-                            queueId.add(agent.getId());
-                            agent.setWaiting();
-                        }
-                    }
-                    else {
-                        if (agent.isWaiting()) {
-                            lineAgentInQueue();
-                        }
-                        else {
-                            // update destination, not gate!!! go to rear!!!!!
-                            float[] newDes = getRearBackPos();
 
-                            agentGoToGate(j, newDes);
-                            newDis = getDis(agentCur, newDes);
-                            if (newDis < 0.5f) {
-                                queueId.add(agent.getId());
-                                agent.setWaiting();
-                            }
-                        }
+//                    agentMove (j, gate, agentCur, agent, queueId);
+
+                    if (whichGate(gate, gate2, j)){ // true: go to gate1; false: go to gate2
+                        ////////////       go to gate 1     ////////////
+                        agentMove (j, gate, agentCur, agent, queueId, currentMillisecond % 2000);
+
+                    } else { // true: go to gate1; false: go to gate2
+                        ////////////       go to gate 2     ////////////
+                        agentMove (j, gate2, agentCur, agent, queueId2, currentMillisecond % 2000);
 
                     }
-                    lineAgentInQueue();
                 }
-
             }
-
         } catch (IOException ignored) {
 
         }
@@ -108,42 +94,131 @@ public class App extends CrowdSimApp{
     }
 
 
-    public void agentGoToGate(int agentId, float[] gate) {
+    private void agentGoToGate(int agentId, float[] gate) {
         FindNearestPolyResult nearest = query.findNearestPoly(gate, ext, filter);
         crowd.requestMoveTarget(agentId, nearest.getNearestRef(), nearest.getNearestPos());
     }
 
-    public void holdAgent(int agentId) {
+    private void holdAgent(int agentId) {
         float[] curPos = getAgentCurrntPosition(agentId);
         FindNearestPolyResult nearest = query.findNearestPoly(curPos, ext, filter);
         crowd.requestMoveTarget(agentId, nearest.getNearestRef(), nearest.getNearestPos());
     }
 
-    public static float getDis(float[] aPos, float[] tempDes) {
+    private static float getDis(float[] aPos, float[] tempDes) {
         float dx = Math.abs(aPos[0] - tempDes[0]);
-//        float dy = Math.abs(aPos[1] - tempDes[1]);
         float dz = Math.abs(aPos[2] - tempDes[2]);
 
-//        return (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
         return (float) Math.sqrt(dx * dx + dz * dz);
     }
 
-    public float[] getRearBackPos() {
+    private float[] getRearBackPos(LinkedList<Integer> queueId) {
         float[] des;
         int id = queueId.getLast();
         des = getAgentBackPosition(id);
         return des;
     }
 
+//    private void decideCheckingGate(float[] gate1, float[] gate2, int aID) {
+//        float[] aCurPos = getAgentCurrntPosition(aID);
+//        float disToGate1 = getDis(aCurPos, gate1);
+//        float disToGate2 = getDis(aCurPos, gate2);
+//
+//        if (disToGate1 > disToGate2){ // agent close to gate2
+//            agentGoToGate(aID, gate2);
+//        } else { // agent close to gate1
+//            agentGoToGate(aID, gate1);
+//        }
+//    }
 
-    private void lineAgentInQueue() {
+
+    private float[] pickGate(int aID) {
+        ArrayList<float[]> gates = new ArrayList<>();
+        float[] gate1 = new float[]{-3, 0.31802097f, 8};
+        float[] gate2 = new float[]{0, 0.31802097f, 8};
+        float[] gate3 = new float[]{3, 0.31802097f, 8};
+        gates.add(gate1);
+        gates.add(gate2);
+        gates.add(gate3);
+
+        float[] aCurPos = getAgentCurrntPosition(aID);
+
+        float dis1 = getDis(aCurPos, gate1); // distance to gate1, in index 0
+        int gateNum = 0;
+
+        for (int i = 1; i < gates.size(); i++) {
+            float dis2 = getDis(aCurPos,gates.get(i));
+            if (dis1 > dis2) {
+                gateNum = i;
+            }
+        }
+        return gates.get(gateNum);
+    }
+
+    private boolean whichGate(float[] gate1, float[] gate2, int aID) {
+        float[] aCurPos = getAgentCurrntPosition(aID);
+        float disToGate1 = getDis(aCurPos, gate1);
+        float disToGate2 = getDis(aCurPos, gate2);
+        boolean res;
+        if (disToGate1 > disToGate2){ // agent close to gate2
+            res = false;
+        } else { // agent close to gate1
+            res = true;
+        }
+        return res;
+    }
+
+    public void agentMove(int id, float[] gate, float[] agentCur, Agent agent, LinkedList<Integer> queueId, int checkingTime) {
+//    public void agentMove(int id, float[] gate, float[] agentCur, Agent agent, LinkedList<Integer> queueId) {
+        ////////////       go to gate       ////////////
+        if (queueId.size() == 0) { // no agent in line
+
+            // no agent is checking, no queue
+            agentGoToGate(id, gate);
+
+            float dis = getDis(agentCur, gate);
+            if (dis < 0.7f) {
+                queueId.add(agent.getId());
+                agent.setWaiting();
+            }
+        } else { // has agent in line
+            if (agent.isWaiting()) {
+//                lineAgentInQueue(queueId, checkingTime);
+            }
+            else {
+                // update destination, not gate! go to rear!
+                float[] newDes = getRearBackPos(queueId);
+
+                agentGoToGate(id, newDes);
+
+                float newDis = getDis(agentCur, newDes);
+                if (newDis < 0.5f) {
+                    queueId.add(agent.getId());
+                    agent.setWaiting();
+                }
+            }
+        }
+        ////////////       go to gate       ////////////
+    }
+
+    private void lineAgentInQueue(LinkedList<Integer> queue, int checkingTime) {
+//    private void lineAgentInQueue(LinkedList<Integer> queue) {
         if (queueId.size() == 0) return;
 
 
         for (int i = 0; i < queueId.size() - 1; i++) {
             if (i == 0) {
                 int id = queueId.get(i);
+
+//                if (checkingTime < 1700) {
                 holdAgent(id);
+//                } else {
+//                    int id = queueId.get(i);
+//                    int aNext = queueId.get(i + 1);
+//                    float[] agentBack = getAgentBackPosition(id);
+//                    FindNearestPolyResult nearest = query.findNearestPoly(agents.get(queueId.get(0)).getEnd(), ext, filter);
+//                    crowd.requestMoveTarget(queueId.remove(0), nearest.getNearestRef(), nearest.getNearestPos());
+//                }
             }
             else {
                 int id = queueId.get(i);
@@ -154,5 +229,4 @@ public class App extends CrowdSimApp{
             }
         }
     }
-
 }
