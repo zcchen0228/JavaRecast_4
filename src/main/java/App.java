@@ -184,6 +184,7 @@ public class App extends CrowdSimApp{
         } else { // has agent in line
             if (agent.isWaiting()) {
 //                lineAgentInQueue(queueId, checkingTime);
+                holdAgent(agent.getId());
             }
             else {
                 // update destination, not gate! go to rear!
@@ -192,7 +193,7 @@ public class App extends CrowdSimApp{
                 agentGoToGate(id, newDes);
 
                 float newDis = getDis(agentCur, newDes);
-                if (newDis < 0.5f) {
+                if (newDis < 0.7f) {
                     queueId.add(agent.getId());
                     agent.setWaiting();
                 }
@@ -201,32 +202,57 @@ public class App extends CrowdSimApp{
         ////////////       go to gate       ////////////
     }
 
-    private void lineAgentInQueue(LinkedList<Integer> queue, int checkingTime) {
-//    private void lineAgentInQueue(LinkedList<Integer> queue) {
-        if (queueId.size() == 0) return;
+    /**
+     * agent in agentId List is set as waiting.
+     *      Code: agent.isWaiting() is for specific agent, thus when loop through all agents, find
+     *          1. check if it is the first one; check "checking" state;
+     *          2. if it is checking ----> take 2 to 3 sec to move on
+     *          3. update the line. 2nd replace the 1st agent. 
+     *
+     * */
 
 
-        for (int i = 0; i < queueId.size() - 1; i++) {
-            if (i == 0) {
-                int id = queueId.get(i);
 
+//    private void lineAgentInQueue(LinkedList<Integer> queueId, int checkingTime) {
+////    private void lineAgentInQueue(LinkedList<Integer> queue) {
+//        if (queueId.size() == 0) return;
+//
+//
+////        for (int i = 0; i < queueId.size() - 1; i++) {
+////            if (i == 0) {
+////                int id = queueId.get(i);
+////
 //                if (checkingTime < 1700) {
-                holdAgent(id);
-//                } else {
-//                    int id = queueId.get(i);
-//                    int aNext = queueId.get(i + 1);
-//                    float[] agentBack = getAgentBackPosition(id);
+//                    agents.get(queueId.get(0)).setWaitingFalse();
+//                }
+//                Agent a = agents.get(queueId.get(0));
+//                if (!a.isWaiting()) {
 //                    FindNearestPolyResult nearest = query.findNearestPoly(agents.get(queueId.get(0)).getEnd(), ext, filter);
 //                    crowd.requestMoveTarget(queueId.remove(0), nearest.getNearestRef(), nearest.getNearestPos());
 //                }
-            }
-            else {
-                int id = queueId.get(i);
-                int aNext = queueId.get(i + 1);
-                float[] agentBack = getAgentBackPosition(id);
-                FindNearestPolyResult nearest = query.findNearestPoly(agentBack, ext, filter);
-                crowd.requestMoveTarget(aNext, nearest.getNearestRef(), nearest.getNearestPos());
-            }
-        }
-    }
+////                if (checkingTime < 1700) {
+////                    holdAgent(id);
+////                } else {
+//////                    int id = queueId.get(i);
+//////                    int aNext = queueId.get(i + 1);
+//////                    float[] agentBack = getAgentBackPosition(id);
+////                    FindNearestPolyResult nearest = query.findNearestPoly(agents.get(queueId.get(0)).getEnd(), ext, filter);
+////                    crowd.requestMoveTarget(queueId.remove(0), nearest.getNearestRef(), nearest.getNearestPos());
+////                }
+////            }
+////            else {
+////                int id = queueId.get(i);
+////                int aNext = queueId.get(i + 1);
+////                float[] agentBack = getAgentBackPosition(id);
+////                FindNearestPolyResult nearest = query.findNearestPoly(agentBack, ext, filter);
+////                crowd.requestMoveTarget(aNext, nearest.getNearestRef(), nearest.getNearestPos());
+////            }
+////        }
+////        for (int i = 0; i < queueId.size() - 1; i++) {
+////            if (i == 0) {
+////                // agent move to it's own destination
+////
+////            }
+////        }
+//    }
 }

@@ -64,6 +64,7 @@ public class Agent{
     public int getId() { return id; }
 
     public void setWaiting() { waiting = true; }
+    public void setWaitingFalse() { waiting = false; }
     public boolean isWaiting() { return waiting; }
 
 }

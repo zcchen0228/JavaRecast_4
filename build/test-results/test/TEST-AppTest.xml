@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="AppTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2018-06-26T06:23:16" hostname="Zhichengde-MacBook-Pro.local" time="1.426">
+<testsuite name="AppTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2018-06-27T02:46:09" hostname="Zhichengde-MacBook-Pro.local" time="1.52">
   <properties/>
-  <testcase name="testAppHasAGreeting" classname="AppTest" time="1.426"/>
+  <testcase name="testAppHasAGreeting" classname="AppTest" time="1.52"/>
   <system-out><![CDATA[Working Directory = /Users/zhichengchen/IdeaProjects/JavaRecast
 ]]></system-out>
   <system-err><![CDATA[]]></system-err>
