@@ -55,11 +55,6 @@ public class Agent{
     public float getDistance() { return dis; }
     public void setDis(float dis) { this.dis = dis; }
 
-//    public boolean getQueueExist() {
-//
-//        return this.queueExist;
-//    }
-
     public void setId(int i) { id = i; }
     public int getId() { return id; }
 

@@ -15,14 +15,9 @@ import java.util.stream.Stream;
  */
 public class App extends CrowdSimApp{
 
-    ArrayList<Agent> agentList = new ArrayList<>();
-    ArrayList<Integer> agentNumList = new ArrayList<>();
-    ArrayList<Float> agentPos = new ArrayList<>();
-    ArrayList<Float> agentDis = new ArrayList<>();
-
-    LinkedList<Agent> queue = new LinkedList<>();
     LinkedList<Integer> queueId = new LinkedList<>();
     LinkedList<Integer> queueId2 = new LinkedList<>();
+    public int agentCheckingTime = 3800;
 
     App() {
 
@@ -51,7 +46,7 @@ public class App extends CrowdSimApp{
                 //Write the agents' positions in a file
                 writeAgentPosition(writer, currentMillisecond);
                 //Update the current simulation time
-                currentMillisecond+=millisecondsBetweenFrames;
+                currentMillisecond += millisecondsBetweenFrames;
 
 
                 /**
@@ -67,24 +62,24 @@ public class App extends CrowdSimApp{
 
                     agent.setId(j);
 
-                    float[] gate = new float[]{-3, 0.31802097f, 8};
-                    float[] gate2 = new float[]{2, 0.31802097f, 8};
-
-//                    float[] gate = pickGate(j);
+                    float[] gate = new float[]{-5, 0.31802097f, 6};
+                    float[] gate2 = new float[]{-2, 0.31802097f, 6};
 
                     float[] agentCur = getAgentCurrntPosition(j);
 
-//                    agentMove (j, gate, agentCur, agent, queueId);
-
                     if (whichGate(gate, gate2, j)){ // true: go to gate1; false: go to gate2
                         ////////////       go to gate 1     ////////////
-                        agentMove (j, gate, agentCur, agent, queueId, currentMillisecond % 2000);
+                        agentMove (j, gate, agentCur, agent, queueId, currentMillisecond % 4000);
 
                     } else { // true: go to gate1; false: go to gate2
                         ////////////       go to gate 2     ////////////
-                        agentMove (j, gate2, agentCur, agent, queueId2, currentMillisecond % 2000);
-
+                        agentMove (j, gate2, agentCur, agent, queueId2, currentMillisecond % 4000);
                     }
+
+//                    if (agent.getChecked()) {                                     // Checking process control
+//                        float[] finalDes = new float[]{8, 0.31802097f, 8};        // Checking process control
+//                        agentGoToGate(j, finalDes);                               // Checking process control
+//                    }                                                             // Checking process control
                 }
             }
         } catch (IOException ignored) {
@@ -96,12 +91,6 @@ public class App extends CrowdSimApp{
 
     private void agentGoToGate(int agentId, float[] gate) {
         FindNearestPolyResult nearest = query.findNearestPoly(gate, ext, filter);
-        crowd.requestMoveTarget(agentId, nearest.getNearestRef(), nearest.getNearestPos());
-    }
-
-    private void holdAgent(int agentId) {
-        float[] curPos = getAgentCurrntPosition(agentId);
-        FindNearestPolyResult nearest = query.findNearestPoly(curPos, ext, filter);
         crowd.requestMoveTarget(agentId, nearest.getNearestRef(), nearest.getNearestPos());
     }
 
@@ -119,18 +108,92 @@ public class App extends CrowdSimApp{
         return des;
     }
 
-//    private void decideCheckingGate(float[] gate1, float[] gate2, int aID) {
-//        float[] aCurPos = getAgentCurrntPosition(aID);
-//        float disToGate1 = getDis(aCurPos, gate1);
-//        float disToGate2 = getDis(aCurPos, gate2);
-//
-//        if (disToGate1 > disToGate2){ // agent close to gate2
-//            agentGoToGate(aID, gate2);
-//        } else { // agent close to gate1
-//            agentGoToGate(aID, gate1);
-//        }
-//    }
+    private boolean whichGate(float[] gate1, float[] gate2, int aID) {
+        float[] aCurPos = getAgentCurrntPosition(aID);
+        float disToGate1 = getDis(aCurPos, gate1);
+        float disToGate2 = getDis(aCurPos, gate2);
+        boolean res;
+        if (disToGate1 > disToGate2){ // agent close to gate2
+            res = false;
+        } else { // agent close to gate1
+            res = true;
+        }
+        return res;
+    }
 
+    public void agentMove(int id, float[] gate, float[] agentCur, Agent agent, LinkedList<Integer> queueId, int checkingTime) {
+        ////////////       go to gate       ////////////
+        if (queueId.size() == 0 && !agent.getChecked()) { // no agent in line
+
+            // no agent is checking, no queue
+            agentGoToGate(id, gate);
+
+            float dis = getDis(agentCur, gate);
+            if (dis < 0.7f) {
+                queueId.add(agent.getId());
+                agent.setWaiting();
+            }
+        }
+        else {
+            if (!agent.isWaiting() && !agent.getChecked())  { // not in line yet
+                // update destination, not gate! go to rear!
+                // getRearBackPos() return current rear position of queue
+                float[] newDes = getRearBackPos(queueId);
+
+                agentGoToGate(id, newDes);
+
+                float newDis = getDis(agentCur, newDes);
+                if (newDis < 0.7f) {
+                    queueId.add(agent.getId());
+                    agent.setWaiting();
+                }
+            }
+            else if (agent.isWaiting() && !agent.getChecked()) { // in line but not checked
+                int idIndexInQueue = queueId.indexOf(id);
+                if (idIndexInQueue == 0) {
+                    // get the head of queue
+                    float newDis = getDis(agentCur, gate);
+                    if (checkingTime > agentCheckingTime && newDis < 0.7f) {
+//                        agents.get(id).setChecked();                 // Checking process control
+//                        agents.get(id).setWaitingFalse();            // Checking process control
+//                        queueId.removeFirst();                       // Checking process control
+                    }
+                }
+//                updateAgentInQueue(queueId, id, checkingTime, gate); // Checking process control
+            }
+            else if (!agent.isWaiting() && agent.getChecked()) { // finish checked
+                // finish check and then go to the end
+            }
+        }
+
+        if(agent.getChecked()) {
+            FindNearestPolyResult nearest = query.findNearestPoly(agent.getStart(), ext, filter);
+            crowd.requestMoveTarget(id, nearest.getNearestRef(), nearest.getNearestPos());
+        }
+        ////////////       go to gate       ////////////
+    }
+
+    private void updateAgentInQueue(LinkedList<Integer> queueId, int id, int checkingTime, float[] gate) {
+        if (queueId.size() == 0) return;
+
+        if (id == queueId.get(0)) {
+            int firstId = queueId.getFirst();
+            float disToGate = getDis(getAgentCurrntPosition(firstId), gate);
+            if (disToGate < 0.7f && checkingTime > agentCheckingTime) {
+                agents.get(id).setChecked();
+            } else {
+                agentGoToGate(id, gate);
+            }
+        }
+        else {
+            for (int i = 1; i < queueId.size(); i++) {
+                float[] prevAgentPos = getAgentBackPosition(queueId.get(i - 1));
+                agentGoToGate(queueId.get(i), prevAgentPos);
+            }
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////
 
     private float[] pickGate(int aID) {
         ArrayList<float[]> gates = new ArrayList<>();
@@ -155,104 +218,25 @@ public class App extends CrowdSimApp{
         return gates.get(gateNum);
     }
 
-    private boolean whichGate(float[] gate1, float[] gate2, int aID) {
-        float[] aCurPos = getAgentCurrntPosition(aID);
-        float disToGate1 = getDis(aCurPos, gate1);
-        float disToGate2 = getDis(aCurPos, gate2);
-        boolean res;
-        if (disToGate1 > disToGate2){ // agent close to gate2
-            res = false;
-        } else { // agent close to gate1
-            res = true;
-        }
-        return res;
+    private void holdAgent(int agentId) {
+        float[] curPos = getAgentCurrntPosition(agentId);
+        FindNearestPolyResult nearest = query.findNearestPoly(curPos, ext, filter);
+        crowd.requestMoveTarget(agentId, nearest.getNearestRef(), nearest.getNearestPos());
     }
 
-    public void agentMove(int id, float[] gate, float[] agentCur, Agent agent, LinkedList<Integer> queueId, int checkingTime) {
-//    public void agentMove(int id, float[] gate, float[] agentCur, Agent agent, LinkedList<Integer> queueId) {
-        ////////////       go to gate       ////////////
-        if (queueId.size() == 0) { // no agent in line
-
-            // no agent is checking, no queue
-            agentGoToGate(id, gate);
-
-            float dis = getDis(agentCur, gate);
-            if (dis < 0.7f) {
-                queueId.add(agent.getId());
-                agent.setWaiting();
-            }
-        } else { // has agent in line
-            if (agent.isWaiting()) {
-//                lineAgentInQueue(queueId, checkingTime);
-                holdAgent(agent.getId());
-            }
-            else {
-                // update destination, not gate! go to rear!
-                float[] newDes = getRearBackPos(queueId);
-
-                agentGoToGate(id, newDes);
-
-                float newDis = getDis(agentCur, newDes);
-                if (newDis < 0.7f) {
-                    queueId.add(agent.getId());
-                    agent.setWaiting();
-                }
-            }
-        }
-        ////////////       go to gate       ////////////
-    }
-
-    /**
-     * agent in agentId List is set as waiting.
-     *      Code: agent.isWaiting() is for specific agent, thus when loop through all agents, find
-     *          1. check if it is the first one; check "checking" state;
-     *          2. if it is checking ----> take 2 to 3 sec to move on
-     *          3. update the line. 2nd replace the 1st agent. 
-     *
-     * */
-
-
-
-//    private void lineAgentInQueue(LinkedList<Integer> queueId, int checkingTime) {
-////    private void lineAgentInQueue(LinkedList<Integer> queue) {
-//        if (queueId.size() == 0) return;
-//
-//
-////        for (int i = 0; i < queueId.size() - 1; i++) {
-////            if (i == 0) {
-////                int id = queueId.get(i);
-////
-//                if (checkingTime < 1700) {
-//                    agents.get(queueId.get(0)).setWaitingFalse();
-//                }
-//                Agent a = agents.get(queueId.get(0));
-//                if (!a.isWaiting()) {
-//                    FindNearestPolyResult nearest = query.findNearestPoly(agents.get(queueId.get(0)).getEnd(), ext, filter);
-//                    crowd.requestMoveTarget(queueId.remove(0), nearest.getNearestRef(), nearest.getNearestPos());
-//                }
-////                if (checkingTime < 1700) {
-////                    holdAgent(id);
-////                } else {
-//////                    int id = queueId.get(i);
-//////                    int aNext = queueId.get(i + 1);
-//////                    float[] agentBack = getAgentBackPosition(id);
-////                    FindNearestPolyResult nearest = query.findNearestPoly(agents.get(queueId.get(0)).getEnd(), ext, filter);
-////                    crowd.requestMoveTarget(queueId.remove(0), nearest.getNearestRef(), nearest.getNearestPos());
-////                }
-////            }
-////            else {
-////                int id = queueId.get(i);
-////                int aNext = queueId.get(i + 1);
-////                float[] agentBack = getAgentBackPosition(id);
-////                FindNearestPolyResult nearest = query.findNearestPoly(agentBack, ext, filter);
-////                crowd.requestMoveTarget(aNext, nearest.getNearestRef(), nearest.getNearestPos());
-////            }
-////        }
-////        for (int i = 0; i < queueId.size() - 1; i++) {
-////            if (i == 0) {
-////                // agent move to it's own destination
-////
-////            }
-////        }
-//    }
+    ////////////////////////////////////////////////////////////////////////////////////////
 }
+
+/**
+ *
+ * agent：
+ *      if ( 有 gate 为空)
+ *          去 gate
+ *      else if ( 没有 gate 为空)
+ *          看哪条 line 最短，排到最短的 line
+ *
+ *
+ * */
+
+
+

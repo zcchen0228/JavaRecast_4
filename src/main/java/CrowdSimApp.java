@@ -136,7 +136,8 @@ public class CrowdSimApp {
 
 
     ///////////////////////////////////////zhi cheng/////////////////////////////////////////
-    // a method to get the current position of certain agetn
+
+    // a method to get the current position of certain agent
     protected float[] getAgentCurrntPosition(int agentNum) {
         float[] res = {0,0,0};
 
@@ -147,11 +148,11 @@ public class CrowdSimApp {
         return res;
     }
 
-    // a method to get the current behind position of certain agetn
+    // a method to get the current behind position of certain agent
     protected float[] getAgentBackPosition(int agentNum) {
         Random ran = new Random();
-        float leftLimit = - 0.1f;
-        float rightLimit = 0.1f;
+        float leftLimit = - 0.2f;
+        float rightLimit = 0.2f;
         float generatedFloat = leftLimit + ran.nextFloat() * (rightLimit - leftLimit);
 
         float[] res = {0,0,0};
@@ -163,66 +164,5 @@ public class CrowdSimApp {
         return res;
     }
 
-    // sort agents by distance from current position to destination
-//    protected ArrayList<Integer> sortNewAgentsList(List<Agent> Agents) {
-//
-//        // sort agent list
-//        ArrayList<Integer> newArrList = new ArrayList<>();
-//
-//        for (int i = 0; i < Agents.size(); i++) {
-//            addAgent(i, Agents.get(i), newArrList);
-//        }
-//
-//        return newArrList;
-//    }
-
-//    private void addAgent(int agentNum, Agent a, ArrayList<Integer> arrL) {
-//        if (arrL.size() == 0) arrL.add(agentNum);
-//        else {
-//            int pos = 0;
-//            for (int i = 0; i < arrL.size(); i++) {
-//                if (a.getDistance() < arrL.get(i).getDistance()) {
-//                    break;
-//                }
-//                pos++;
-//            }
-//            if (pos == arrL.size()) arrL.add(a);
-//            else arrL.add(pos, a);
-//        }
-//    }
-
-//    public void addAgent(Agent agent, int agentNum, Float dis) {
-//        agentList.add(agent);
-//        agentNumList.add(agentNum);
-//        agentPos.add(dis);
-//        if(agentList.size() == 6) agentList.set(agentNum, agent);
-//        if (agentNumList.size() == 6) agentNumList.set(agentNum, agentNum);
-//        if (agentPos.size() == 6) agentPos.set(agentNum, dis);
-//
-//    }
-
-//    public void sortAgent(ArrayList<Agent> agentList, ArrayList<Integer> agentNumList, ArrayList<Float> agentPos ) {
-//        Agent keyAgent;
-//        int keyANum;
-//        float keyPos;
-//
-//        int j;
-//        for (int i = 1; i < agentPos.size(); i++) {
-//            keyAgent = agentList.get(i);
-//            keyANum = agentNumList.get(i);
-//            keyPos = agentPos.get(i);
-//
-//            j = i - 1;
-//            while (j >= 0 && agentPos.get(j) > keyPos) {
-//                agentList.set(j + 1, agentList.get(j));
-//                agentNumList.set(j + 1, agentNumList.get(j));
-//                agentPos.set(j + 1, agentPos.get(j));
-//                j--;
-//            }
-//            agentList.set(j + 1, keyAgent);
-//            agentNumList.set(j + 1, keyANum);
-//            agentPos.set(j + 1, keyPos);
-//        }
-//    }
     ///////////////////////////////////////zhi cheng/////////////////////////////////////////
 }
