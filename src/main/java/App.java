@@ -1,4 +1,5 @@
 import org.recast4j.detour.FindNearestPolyResult;
+import org.recast4j.detour.Link;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -16,14 +17,25 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class App extends CrowdSimApp{
 
-    float[] gate = new float[]{-2, 0.31802097f, 6};
-    float[] gate2 = new float[]{2, 0.31802097f, 6};
-    LinkedList<Integer> queueId = new LinkedList<>();
-    LinkedList<Integer> queueId2 = new LinkedList<>();
+
+    LinkedList<LinkedList<Integer>> QueueAll = new LinkedList<>();
+    LinkedList<float[]> GateAll = new LinkedList<>();
+
+    float[] gate = new float[]{-2, 0.31802097f, 8};
+    float[] gate2 = new float[]{2, 0.31802097f, 8};
     public int agentCheckingTime = 4800;
     public int modParam = 5000;
-
+//    LinkedList<Integer> queueId = new LinkedList<>();
+//    LinkedList<Integer> queueId2 = new LinkedList<>();
     App() {
+
+        // initialize queues in QueueAll
+        for (int i = 0; i < 2; i++) {
+            QueueAll.add(new LinkedList<>());
+        }
+
+        GateAll.add(gate);
+        GateAll.add(gate2);
 
         //Path is the path to the file where we will store our results
         //Currently, this is out.csv.
@@ -79,14 +91,17 @@ public class App extends CrowdSimApp{
                         agentGoToGate(j, agent.getStart());                               // Checking process control
                     }                                                             // Checking process control
                     else {
-                        if (whichGate(gate, gate2, j)){ // true: go to gate1; false: go to gate2
-                            ////////////       go to gate 1     ////////////
-                            agentMove (j, gate, agentCur, agent, queueId, currentMillisecond % modParam);
 
-                        } else { // true: go to gate1; false: go to gate2
-                            ////////////       go to gate 2     ////////////
-                            agentMove (j, gate2, agentCur, agent, queueId2, currentMillisecond % modParam);
-                        }
+                        int index = pickGate(GateAll, j);
+                        agentMove (j, GateAll.get(index), agentCur, agent, QueueAll.get(index), currentMillisecond % modParam);
+//                        if (whichGate(gate, gate2, j)){ // true: go to gate1; false: go to gate2
+//                            ////////////       go to gate 1     ////////////
+//                            agentMove (j, gate, agentCur, agent, QueueAll.get(0), currentMillisecond % modParam);
+//
+//                        } else { // true: go to gate1; false: go to gate2
+//                            ////////////       go to gate 2     ////////////
+//                            agentMove (j, gate2, agentCur, agent, QueueAll.get(1), currentMillisecond % modParam);
+//                        }
                     }
 //                    FindNearestPolyResult nearest = query.findNearestPoly(gate, ext, filter);
 //                    crowd.requestMoveTarget(j, nearest.getNearestRef(), nearest.getNearestPos());
@@ -138,26 +153,6 @@ public class App extends CrowdSimApp{
     }
 
     /**
-     * Decide which gate the agent will go.
-     * @param gate1
-     * @param gate2
-     * @param aID
-     * @return
-     */
-    private boolean whichGate(float[] gate1, float[] gate2, int aID) {
-        float[] aCurPos = getAgentCurrntPosition(aID);
-        float disToGate1 = getDis(aCurPos, gate1);
-        float disToGate2 = getDis(aCurPos, gate2);
-        boolean res;
-        if (disToGate1 > disToGate2){ // agent close to gate2
-            res = false;
-        } else { // agent close to gate1
-            res = true;
-        }
-        return res;
-    }
-
-    /**
      * Agent moves based on its checking/waiting status.
      * @param id
      * @param gateInput
@@ -186,7 +181,7 @@ public class App extends CrowdSimApp{
                 ////////////////////////////////////////////////////////////////////////////////////
                 // Go to the shorter line(length of line is larger than the other by 1 to 2)
                 // Only work when there has two lines.
-                LinkedList<Integer> otherQueue = compareQueueLine(queueId, queueId2);
+                LinkedList<Integer> otherQueue = compareQueueLine(QueueAll.get(0), QueueAll.get(1));
                 float[] rearPos;
                 if (otherQueue != null) {
                     // current rear position of queue
@@ -297,29 +292,43 @@ public class App extends CrowdSimApp{
         }
         return res;
     }
+
+    /**
+     * Decide which gate the agent will go.
+     * @param gate1
+     * @param gate2
+     * @param aID
+     * @return
+     */
+    private boolean whichGate(float[] gate1, float[] gate2, int aID) {
+        float[] aCurPos = getAgentCurrntPosition(aID);
+        float disToGate1 = getDis(aCurPos, gate1);
+        float disToGate2 = getDis(aCurPos, gate2);
+        boolean res;
+        if (disToGate1 > disToGate2){ // agent close to gate2
+            res = false;
+        } else { // agent close to gate1
+            res = true;
+        }
+        return res;
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////
 
-    private float[] pickGate(int aID) {
-        ArrayList<float[]> gates = new ArrayList<>();
-        float[] gate1 = new float[]{-3, 0.31802097f, 8};
-        float[] gate2 = new float[]{0, 0.31802097f, 8};
-        float[] gate3 = new float[]{3, 0.31802097f, 8};
-        gates.add(gate1);
-        gates.add(gate2);
-        gates.add(gate3);
-
+    /***
+     * Return index of queue in QueueAll list and gate in GateAll list.
+     */
+    private int pickGate(LinkedList<float[]> gateAllInput, int aID) {
         float[] aCurPos = getAgentCurrntPosition(aID);
-
-        float dis1 = getDis(aCurPos, gate1); // distance to gate1, in index 0
-        int gateNum = 0;
-
-        for (int i = 1; i < gates.size(); i++) {
-            float dis2 = getDis(aCurPos,gates.get(i));
-            if (dis1 > dis2) {
-                gateNum = i;
+        float shortestDis = getDis(aCurPos, gate);
+        int index = 0;
+        for (int i = 0; i < gateAllInput.size(); i++) {
+            if (getDis(aCurPos, gateAllInput.get(i)) < shortestDis) {
+                shortestDis = getDis(aCurPos, gateAllInput.get(i));
+                index = i;
             }
         }
-        return gates.get(gateNum);
+        return index;
     }
 
     private int generateRandomNum(int min, int max) {
