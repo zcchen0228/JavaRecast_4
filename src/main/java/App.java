@@ -21,21 +21,21 @@ public class App extends CrowdSimApp{
     LinkedList<LinkedList<Integer>> QueueAll = new LinkedList<>();
     LinkedList<float[]> GateAll = new LinkedList<>();
 
-    float[] gate = new float[]{-2, 0.31802097f, 8};
-    float[] gate2 = new float[]{2, 0.31802097f, 8};
+    float[] gate = new float[]{-5, 0.31802097f, 8};
+    float[] gate2 = new float[]{0, 0.31802097f, 8};
+    float[] gate3 = new float[]{5, 0.31802097f, 8};
     public int agentCheckingTime = 4800;
     public int modParam = 5000;
-//    LinkedList<Integer> queueId = new LinkedList<>();
-//    LinkedList<Integer> queueId2 = new LinkedList<>();
     App() {
 
         // initialize queues in QueueAll
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 3; i++) {
             QueueAll.add(new LinkedList<>());
         }
 
         GateAll.add(gate);
         GateAll.add(gate2);
+        GateAll.add(gate3);
 
         //Path is the path to the file where we will store our results
         //Currently, this is out.csv.
@@ -56,7 +56,7 @@ public class App extends CrowdSimApp{
             int secondsOfSimulation = 20; //How long should the simulation run? Change this to whatever you want.
 
             // Randomly hold 4 agents at the beginning to simulate agent's coming sequence.
-            int[] agentBeHoldList = generateHoldAgentList(6);
+            int[] agentBeHoldList = generateHoldAgentList(10);
 
             for (int i = 0; i < 25*secondsOfSimulation; i++) {
                 //Tell the crowd to update itself.
@@ -88,23 +88,12 @@ public class App extends CrowdSimApp{
 
                     if (agent.getChecked()) {                                     // Checking process control
                         float[] finalDes = new float[]{8, 0.31802097f, 8};        // Checking process control
-                        agentGoToGate(j, agent.getStart());                               // Checking process control
-                    }                                                             // Checking process control
-                    else {
-
+                        agentGoToGate(j, agent.getStart());                       // Checking process control
+                    } else {
+                        int randModParam = generateRandomNum(1500, 5500);
                         int index = pickGate(GateAll, j);
-                        agentMove (j, GateAll.get(index), agentCur, agent, QueueAll.get(index), currentMillisecond % modParam);
-//                        if (whichGate(gate, gate2, j)){ // true: go to gate1; false: go to gate2
-//                            ////////////       go to gate 1     ////////////
-//                            agentMove (j, gate, agentCur, agent, QueueAll.get(0), currentMillisecond % modParam);
-//
-//                        } else { // true: go to gate1; false: go to gate2
-//                            ////////////       go to gate 2     ////////////
-//                            agentMove (j, gate2, agentCur, agent, QueueAll.get(1), currentMillisecond % modParam);
-//                        }
+                        agentMove (j, GateAll.get(index), agentCur, agent, QueueAll.get(index), currentMillisecond % randModParam);
                     }
-//                    FindNearestPolyResult nearest = query.findNearestPoly(gate, ext, filter);
-//                    crowd.requestMoveTarget(j, nearest.getNearestRef(), nearest.getNearestPos());
                 }
             }
         } catch (IOException ignored) {
@@ -113,6 +102,8 @@ public class App extends CrowdSimApp{
         writeJSFile();
     }
 
+
+    ////////////////////////////////////////////////////////////////////////////////////////
     /**
      * Agent with specific id go to gate (destination).
      * @param agentId agentId agent go to gate
@@ -198,14 +189,13 @@ public class App extends CrowdSimApp{
                     queueIdInput.add(agent.getId());
                     agent.setWaiting();
                 }
-
-
             }
             else if (agent.isWaiting() && !agent.getChecked()) { // in line but not checked
                 int idIndexInQueue = queueIdInput.indexOf(id);
                 if (idIndexInQueue == 0) {
                     // get the head of queue
                     float newDis = getDis(agentCur, gateInput);
+
                     if (checkingTime > agentCheckingTime && newDis < 0.7f) {
                         agents.get(id).setChecked();                 // Checking process control
                         agents.get(id).setWaitingFalse();            // Checking process control
@@ -213,6 +203,11 @@ public class App extends CrowdSimApp{
                     }
                 }
                 updateAgentInQueue(queueIdInput, id, checkingTime, gateInput); // Checking process control
+                // here check the length of queues, make sure the difference among all queues is less than 2
+
+//                if (QueueAll.get(0).size() > 1 && QueueAll.get(1).size() > 1 && QueueAll.get(2).size() > 1)
+//                    adjustQueue(QueueAll);
+
             }
             else if (!agent.isWaiting() && agent.getChecked()) { // finish checked
                 // finish check and then go to the end
@@ -242,12 +237,41 @@ public class App extends CrowdSimApp{
         }
     }
 
+    //////////////////////////////////////////////////////////////////////////////////////////
+
+    private void adjustQueue(LinkedList<LinkedList<Integer>> queueAllInput) {
+        int longLine = queueAllInput.get(0).size(), shortLine = queueAllInput.get(0).size();
+        int longIndex = 0, shortIndex = 0;
+        for (int i = 1; i < queueAllInput.size(); i++) {
+            if (longLine <= queueAllInput.get(i).size()) {
+                longIndex = i;
+            }
+            if (shortLine >= queueAllInput.get(i).size()) {
+                shortIndex = i;
+            }
+        }
+        int diff = queueAllInput.get(longIndex).size() - queueAllInput.get(shortIndex).size();
+        if (diff > 2) {
+            LinkedList<Integer> longQueue = queueAllInput.get(longIndex);
+            LinkedList<Integer> shortQueue = queueAllInput.get(shortIndex);
+            int lastId_Long = longQueue.getLast();
+            int lastId_Short = shortQueue.getLast();
+            Agent lastAgent_Long = agents.get(lastId_Long);
+            Agent lastAgent_Short = agents.get(lastId_Short);
+            lastAgent_Long.setWaitingFalse();
+//            agentGoToGate(longQueue.getLast(), );
+            float[] newLocation = getAgentBackPosition(shortQueue.getLast());
+            agentGoToGate(lastAgent_Long.getId(), newLocation);
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////
+
     // Generate a agent list to be hold at the beginning.
     public int[] generateHoldAgentList(int numOfAgentHold) {
         int min = 0;
         int max = agents.size() - 1;
         int[] holdAgentList = new int[numOfAgentHold];
-
 
         for (int i = 0; i < numOfAgentHold; i++) {
             int randomNum = ThreadLocalRandom.current().nextInt(min, max + 1);
@@ -262,7 +286,7 @@ public class App extends CrowdSimApp{
      * @param
      */
     private void randomHoldAgent(int[] agentHoldList, int currentMillisecond) {
-        int[] holdingTimeList = {2500, 3000,4000, 5000, 7000, 8500};
+        int[] holdingTimeList = {2500, 3000, 4000, 5000, 7000, 8500, 8800, 9000, 9100, 9500};
         for (int i = 0; i < agentHoldList.length; i++) {
             if (currentMillisecond < holdingTimeList[i]) {
                 holdAgent(agentHoldList[i]);
@@ -293,27 +317,25 @@ public class App extends CrowdSimApp{
         return res;
     }
 
-    /**
-     * Decide which gate the agent will go.
-     * @param gate1
-     * @param gate2
-     * @param aID
-     * @return
-     */
-    private boolean whichGate(float[] gate1, float[] gate2, int aID) {
-        float[] aCurPos = getAgentCurrntPosition(aID);
-        float disToGate1 = getDis(aCurPos, gate1);
-        float disToGate2 = getDis(aCurPos, gate2);
-        boolean res;
-        if (disToGate1 > disToGate2){ // agent close to gate2
-            res = false;
-        } else { // agent close to gate1
-            res = true;
-        }
-        return res;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////
+//    /**
+//     * Decide which gate the agent will go.
+//     * @param gate1
+//     * @param gate2
+//     * @param aID
+//     * @return
+//     */
+//    private boolean whichGate(float[] gate1, float[] gate2, int aID) {
+//        float[] aCurPos = getAgentCurrntPosition(aID);
+//        float disToGate1 = getDis(aCurPos, gate1);
+//        float disToGate2 = getDis(aCurPos, gate2);
+//        boolean res;
+//        if (disToGate1 > disToGate2){ // agent close to gate2
+//            res = false;
+//        } else { // agent close to gate1
+//            res = true;
+//        }
+//        return res;
+//    }
 
     /***
      * Return index of queue in QueueAll list and gate in GateAll list.
