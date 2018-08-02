@@ -1,0 +1,271 @@
+<html>
+
+<head>
+  <title>UV Editor</title>
+  <style>
+    body {
+      margin: 0;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app"></div>
+  <script src="./three.js"></script>
+  <script src="./OBJLoader.js"></script>
+  <script src="./OrbitControls.js"></script>
+
+
+  <script src='./data.js'></script>
+
+
+  <script src='https://code.jquery.com/jquery-3.2.1.min.js'></script>
+  <script src='https://unpkg.com/vue'></script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js'></script>
+
+  <script>
+    const scene = new THREE.Scene();
+    //scene.fog = new THREE.Fog(0x59472b, 10, 250)
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 800);
+
+    const renderer = new THREE.WebGLRenderer();
+    renderer.antialias = true;
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+
+
+    camera.position.z = 50;
+    camera.position.y = 50;
+    camera.position.x = 50;
+
+    const ambientLight = new THREE.AmbientLight(0xcccccc, .1);
+    scene.add(ambientLight);
+
+    scene.add(camera);
+
+    //var directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    //scene.add(directionalLight);
+
+
+
+
+    //Adding shadows
+
+    //Create a WebGLRenderer and turn on shadows in the renderer
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    //Create a DirectionalLight and turn on shadows for the light
+    const light = new THREE.DirectionalLight(0xcccccc, 1, 100);
+    light.position.set(5, 10, 10); 			//default; light shining from top
+    light.target.position.set(0, 0, 0);
+    light.castShadow = true;            // default false
+    scene.add(light);
+
+    //Set up shadow properties for the light
+    light.shadow.mapSize.width = 1024;  // default
+    light.shadow.mapSize.height = 1024; // default
+    light.shadow.camera.near = 0.5;    // default
+    light.shadow.camera.far = 50;     // default
+    light.shadow.camera.left = -50;
+    light.shadow.camera.bottom = -50;
+    light.shadow.camera.right = 50;
+    light.shadow.camera.top = 50;
+
+
+    //const helper = new THREE.CameraHelper(light.shadow.camera);
+    //scene.add(helper);
+
+    /*let light = new THREE.SpotLight(0xffffff, 1, 0, Math.PI/2, 1);
+    light.position.set(0, 1500, 1000);
+    light.target.position.set(0,0,0);
+    light.castShadow = true;
+    light.shadowCameraNear = 700;
+    light.shadowCameraFar = 3000;
+    light.shadowCameraFox = 50;
+    light.shadowBias = .0001;
+    light.shadowMapWidth = 2048;
+    light.shadowMapHeight = 2048;
+    scene.add(light);*/
+
+
+
+    //Create a plane that receives shadows (but does not cast them)
+    const planeGeometry = new THREE.PlaneBufferGeometry(20, 20, 32, 32);
+    const planeMaterial = new THREE.MeshStandardMaterial({color: 0x00ff00});
+    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane.receiveShadow = true;
+
+    //scene.add(plane);
+    //Ending shadows
+
+    const axesHelper = new THREE.AxesHelper(15);
+    scene.add(axesHelper);
+
+
+    //From https://stackoverflow.com/questions/8426822/rotate-camera-in-three-js-with-mouse
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+    //From https://github.com/mrdoob/three.js/blob/master/examples/misc_controls_orbit.html
+    controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+    controls.dampingFactor = 0.25;
+    controls.screenSpacePanning = true;
+    controls.minDistance = 10;
+    controls.maxDistance = 100;
+    controls.maxPolarAngle = Math.PI / 2;
+
+
+    const imagePrefix = "images/Simple-";
+    const directions = ["xpos", "xpos", "ypos", "yneg", "xpos", "xpos"];
+    const imageSuffix = ".png";
+    const skyGeometry = new THREE.CubeGeometry(500, 500, 500);
+
+    const materialArray = [];
+    for (let i = 0; i < 6; i++)
+      materialArray.push(new THREE.MeshBasicMaterial({
+        map: THREE.ImageUtils.loadTexture(imagePrefix + directions[i] + imageSuffix),
+        side: THREE.BackSide,
+        fog: false
+      }));
+    const skyMaterial = new THREE.MeshFaceMaterial(materialArray);
+    const skyBox = new THREE.Mesh(skyGeometry, skyMaterial);
+    scene.add(skyBox);
+
+    console.log("Added skybox");
+
+
+
+
+
+    new THREE.OBJLoader()
+      .load('obstacle.obj', function (object) {
+
+        //From https://stackoverflow.com/questions/16200082/assigning-materials-to-an-objloader-model-in-three-js
+
+        object.traverse(function (child) {
+
+          if (child instanceof THREE.Mesh) {
+
+            child.material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+            child.receiveShadow = true;
+            child.castShadow = true;
+            child.doubleSided = true;
+
+          }
+
+        });
+        scene.add(object);
+      });
+
+    //End vertices
+
+
+    const animate = function () {
+
+      requestAnimationFrame(animate);
+
+      controls.update();
+
+
+      if (app) {
+        let frame = app.frame;
+        let msec = frame * 40;
+        for (let i = 0; i < app.ids.length; i++) {
+
+          let val = app.values.filter(v => {
+            return v[0] === app.ids[i] && v[1] === msec
+          })[0];
+
+          if (val && app.agentCubes[i]) {
+            app.agentCubes[i].position.set(val[2], val[3] + .7, val[4]);
+          }
+        }
+      }
+      if (app)
+        app.frame++;
+      renderer.render(scene, camera);
+
+    };
+
+    animate();
+
+    var app = new Vue({
+      el: '#app',
+      data: {
+        lines: [],
+        values: [],
+        frame: 0,
+        minX: 0,
+        minY: 0,
+        maxX: 0,
+        maxY: 0,
+        maxFrame: 1000000,
+        paused: false,
+        agentCubes: [],
+        ids: [],
+
+      },
+      methods: {
+
+
+
+      }
+    });
+
+    app.lines = [];
+    app.values = [];
+    app.frame = 0;
+    app.lines = data.split("\n");
+
+    for (let i = 0; i < app.lines.length; i++) {
+      if (app.lines[i].trim())
+        app.values.push(app.lines[i].split(",").map(Number));
+    }
+
+
+    app.minX = app.values.map(l => l[2]).reduce((a, b) => Math.min(a, b), 10000000);
+    app.minY = app.values.map(l => l[4]).reduce((a, b) => Math.min(a, b), 10000000);
+    app.maxX = app.values.map(l => l[2]).reduce((a, b) => Math.max(a, b), -10000000);
+    app.maxY = app.values.map(l => l[4]).reduce((a, b) => Math.max(a, b), -10000000);
+
+    app.maxFrame = app.values.map(l => l[1]).reduce((a, b) => Math.max(a, b), 0) / 40;
+
+
+
+    //Now get a list of the unique agent ids
+    app.ids = _.uniq(app.values.map(x => x[0]));
+    console.log(app.ids);
+
+
+    for (let i = 0; i < app.ids.length; i++) {
+      const geometry = new THREE.CylinderGeometry(.5, .5, 2);
+      const material = new THREE.MeshStandardMaterial({ color: 0x0000ff });
+      const newCube = new THREE.Mesh(geometry, material);
+      newCube.position.set(0, 0, 0);
+      newCube.castShadow = true;
+      scene.add(newCube);
+      app.agentCubes.push(newCube);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+  </script>
+</body>
+
+</html>
